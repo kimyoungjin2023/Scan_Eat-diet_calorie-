@@ -38,13 +38,13 @@
 
 ## 👥 Team Members (5)
 
-| Name | Role | Responsibility |
-|------|------|---------------|
-| Member 1 | Team Lead | Project Planning, Model Architecture |
-| Member 2 | AI Engineer | Model Training & Tuning |
-| Member 3 | Data Engineer | Dataset 구축 및 전처리 |
-| Member 4 | Backend | Inference Pipeline 구현 |
-| Member 5 | Research | 논문 리서치 및 성능 분석 |
+| Name | Role | Responsibility | notion |
+|------|------|---------------|---------|
+| 김영진 | Team Lead | Project Planning, ALL Position |
+| 황보수호 | Team member | ALL Position | https://www.notion.so/30d485573211803787bed73f5a000a31 |
+| 이정결 | Team member | ALL Position |
+| 박소윤 | Team member | ALL Position |
+| 안병준 | Team member | ALL Position |
 
 > ※ 실제 이름과 역할에 맞게 수정해주세요.
 
