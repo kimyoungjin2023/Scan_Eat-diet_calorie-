@@ -44,7 +44,7 @@
 | 황보수호 | Team member | ALL Position | https://www.notion.so/30d485573211803787bed73f5a000a31 |
 | 이정결 | Team member | ALL Position |
 | 박소윤 | Team member | ALL Position |
-| 안병준 | Team member | ALL Position |
+| 안병준 | Team member | ALL Position | https://www.notion.so/SCAN-EAT-17afe6b7b139809d8290fa76c84abcad?source=copy_link |
 
 > ※ 실제 이름과 역할에 맞게 수정해주세요.
 
