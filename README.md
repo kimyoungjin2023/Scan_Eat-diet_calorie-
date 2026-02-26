@@ -9,10 +9,7 @@
 ## 📌 Project Overview
 
 **Scan_Eat (diet_calorie)** 는 음식 이미지를 입력받아  
-객체 탐지(Object Detection)를 통해 음식의 위치와 종류를 식별하는 AI 프로젝트입니다.
-
-현재는 **Detection 단계**를 구현하고 있으며,  
-향후 음식 분할(Segmentation) 및 칼로리 추정 기능까지 확장하는 것을 목표로 합니다.
+음식 분할(Segmentation)을 통해  칼로리 추정 기능과 탄단지를 계산하는 AI 프로젝트입니다.
 
 ---
 
@@ -49,6 +46,27 @@
 > ※ 실제 이름과 역할에 맞게 수정해주세요.
 
 ---
+
+첫 번째 코드는 프로토타입(Prototype model) 모델을 만들기위해 진행했습니다.
+
+진행환경은 Colab에서 T4 GPU 환경에서 진행하였고, 
+
+또 다른 환경은 데스크탑 환경은
+
+## 🧱 Hardware Environment
+
+실험 및 학습은 아래 환경에서 진행되었습니다.
+
+| Component | Specification |
+| :--- | :--- |
+| **GPU** | NVIDIA RTX 4060 Ti (8GB) |
+| **CUDA** | Version 11.7 |
+| **CPU** | AMD Ryzen 5 5600 6-core |
+| **RAM** | 16GB |
+
+
+
+
 
 ## 📂 Project Structure
 
