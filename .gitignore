@@ -1,0 +1,26 @@
+# 1. 대용량 데이터 및 모델 가중치 제외
+data/
+output/
+output_phase2/
+models/
+*.pth
+*.pkl
+
+# 2. 외부 라이브러리 (⭐ 깃허브 충돌/용량 폭발 방지 필수!)
+detectron2/
+Mask2Former/
+sam/
+
+# 3. 자동 생성되는 학습 로그 폴더
+runs/
+
+# 4. 결과물 이미지 및 로그
+*.png
+*.jpg
+*.json
+!_annotations.coco_final.json
+
+# 5. 파이썬/OS 임시 파일
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
