@@ -65,8 +65,7 @@
 | **RAM** | 16GB |
 
 
-
-
+---
 
 ## 📂 Project Structure
 
