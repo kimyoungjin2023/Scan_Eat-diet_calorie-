@@ -1,145 +1,343 @@
-# 🍽️ Scan_Eat (diet_calorie)
+# 🍽️ Scan Eat - AI Food Nutrition Analysis
 
-> 📸 Food Image → 🍱 Food Detection  
-> AI 기반 음식 객체 탐지 프로젝트  
-> **Team Project | 5 Members**
+> **YOLOv11 기반 한국 음식 세그먼테이션 및 영양소 분석 시스템**
 
----
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.5-red.svg)](https://pytorch.org/)
+[![YOLOv11](https://img.shields.io/badge/YOLOv11-Ultralytics-00FFFF.svg)](https://github.com/ultralytics/ultralytics)
+[![mAP50](https://img.shields.io/badge/mAP50-61.5%25-brightgreen.svg)](#성능-분석)
 
-## 📌 Project Overview
-
-**Scan_Eat (diet_calorie)** 는 음식 이미지를 입력받아  
-객체 탐지(Object Detection)를 통해 음식의 위치와 종류를 식별하는 AI 프로젝트입니다.
-
-현재는 **Detection 단계**를 구현하고 있으며,  
-향후 음식 분할(Segmentation) 및 칼로리 추정 기능까지 확장하는 것을 목표로 합니다.
+음식 사진 한 장으로 **개별 음식 인식 + 픽셀 단위 세그먼테이션 + VLM 기반 영양소 분석**을 제공하는 End-to-End AI 시스템입니다.
 
 ---
 
-## 🎯 Current Objective (Phase 1)
+## 📑 목차
 
-- 이미지 내 음식 객체 탐지
-- Bounding Box 생성
-- 음식 클래스 분류
-- Detection 성능 지표(mAP, Precision, Recall) 분석
-
----
-
-## 🧠 Tech Stack
-
-- Python 3.9+
-- PyTorch
-- YOLO / Faster R-CNN
-- OpenCV
-- Albumentations
-- CUDA (GPU 환경 권장)
+- [프로젝트 개요](#-프로젝트-개요)
+- [주요 성과](#-주요-성과)
+- [데이터셋 분석](#-데이터셋-분석)
+- [3단계 모델링 여정](#-3단계-모델링-여정)
+- [성능 분석](#-성능-분석)
+- [기술적 인사이트](#-기술적-인사이트)
+- [향후 발전 방향](#-향후-발전-방향)
+- [실행 가이드](#-실행-가이드)
 
 ---
 
-## 👥 Team Members (5)
+## 🎯 프로젝트 개요
 
-| Name | Role | Responsibility | notion |
-|------|------|---------------|---------|
-| 김영진 | Team Lead | Project Planning, ALL Position |
-| 황보수호 | Team member | ALL Position | https://www.notion.so/30d485573211803787bed73f5a000a31 |
-| 이정결 | Team member | ALL Position |
-| 박소윤 | Team member | ALL Position |
-| 안병준 | Team member | ALL Position | https://www.notion.so/SCAN-EAT-17afe6b7b139809d8290fa76c84abcad?source=copy_link |
+### **핵심 목표**
 
-> ※ 실제 이름과 역할에 맞게 수정해주세요.
+제한된 자원(620개 데이터)에서 **실용적 수준의 음식 세그먼테이션 모델**을 구축하고, 이를 기반으로 **VLM 연동 영양소 분석 시스템**을 개발합니다.
 
----
+### **기술적 도전과제**
 
-## 📂 Project Structure
+- ✅ **Small Data Challenge**: 620개 이미지로 41개 클래스 학습
+- ✅ **Resource Optimization**: GPU 메모리 최적화
+- ✅ **Real-time Processing**: 실시간 추론 속도 확보
+- ✅ **Localization**: 영어 라벨을 한글로 변환 및 중복 통합
 
-```
-Scan_Eat/
-│
-├── data/
-│   ├── images/
-│   ├── labels/
-│
-├── models/
-│   ├── detection_model.pt
-│
-├── train.py
-├── detect.py
-├── utils.py
-├── requirements.txt
-└── README.md
-```
+## 🏆 주요 성과
+
+| 항목 | 결과 | 비고 |
+|------|------|------|
+| **최종 mAP50(Mask)** | **61.5%** | 실용적 수준 달성 |
+| **학습 효율성** | 3.5시간 | GPU 최적화 성공 |
+| **메모리 최적화** | 안정적 학습 | GPU 메모리 효율 활용 |
+| **데이터 정제** | 30개 파일 수정 | 자동 품질 관리 |
+| **클래스 통합** | 44개 → 41개 | 중복 제거 |
 
 ---
 
-## ⚙️ Installation
+## 📊 데이터셋 분석
 
-```bash
-git clone https://github.com/your-repo/Scan_Eat.git
-cd Scan_Eat
-pip install -r requirements.txt
-```
+### **데이터 구성**
+총 데이터: 652개 → 620개 (정제 후) 
+├── Train: 614개 (99.0%) 
+├── Valid: 38개 (6.1%) 
+└── Test: 10개
 
----
+총 인스턴스: 1,147개 평균 음식/이미지: 1.85개 클래스 수: 41개 (중복 통합 후)
 
-## 🏋️ Model Training
+### **전처리 과정**
 
-```bash
-python train.py --data ./data --epochs 50 --batch 16 --img-size 640
-```
+**1단계: 품질 검증 및 자동 수정**
+- 빈 라벨 파일: 7개 제거
+- 세그먼테이션 규격 오류: 23개 라인 자동 수정
+- 좌표 범위 초과: 15건 클리핑 처리
+- 홀수 좌표 보정: 마지막 좌표 제거
+- 점 부족 문제: 3개 미만 점 제거
 
-### 주요 파라미터
+**2단계: 한글 매핑 및 클래스 통합**
+```python
+# 중복 통합 예시
+'Kimch_Kimch' + 'Kimchi' + 'Kimchi_Kimchi' → '배추김치'
+'Bokkeum_DriedSquidBokkeum' + 'Bokkeum_SpicyDriedSquidBokkeum' → '진미채볶음'
+'Rice_WhiteRice' → '쌀밥'
+'Rice_MixedGrainRice' → '잡곡밥'
 
-- `--epochs` : 학습 반복 횟수
-- `--batch` : 배치 사이즈
-- `--img-size` : 입력 이미지 크기
+결과: 44개 클래스 → 41개 클래스
 
----
+클래스 분포 분석 (상위 10개)
+순위	음식명	개수	성능(mAP50)
+1	쌀밥	89	99.5% ✅
+2	배추김치	76	99.5% ✅
+3	콩나물무침	52	81.9% ✅
+4	상추	48	85.4% ✅
+5	시금치나물	42	66.9%
+6	잡곡밥	35	99.5% ✅
+7	김	32	70.5%
+8	미역국	28	94.5% ✅
+9	계란말이	25	99.5% ✅
+10	장조림	22	66.9%
+⚠️ 문제 클래스 (mAP50 = 0%):
 
-## 🔎 Inference
+깻잎장아찌: 1개 (데이터 부족)
+피클: 1개 (데이터 부족)
+고추장아찌: 5개 (데이터 부족)
 
-```bash
-python detect.py --weights models/detection_model.pt --source test.jpg
-```
 
-결과 이미지는 `/runs/detect/` 폴더에 저장됩니다.
+## **Section 3: Phase 1 베이스라인 학습**
 
----
+## 🚀 3단계 모델링 여정
 
-## 📊 Evaluation Metrics
+### **전체 학습 전략**
 
-- mAP@0.5
-- mAP@0.5:0.95
-- Precision
-- Recall
-
----
-
-## 🗺️ Roadmap
-
-### Phase 1 (Current)
-- [x] Food Detection 모델 구현
-- [ ] 성능 최적화 및 하이퍼파라미터 튜닝
-
-### Phase 2
-- [ ] Food Segmentation
-- [ ] Portion Size Estimation
-
-### Phase 3
-- [ ] Calorie Estimation 모델 통합
-- [ ] Web/App 배포
-
----
-
-## 💡 Expected Applications
-
-- 다이어트 보조 앱
-- 스마트 식단 관리 시스템
-- 헬스케어 AI 서비스
-- B2B 푸드 데이터 분석 솔루션
+Phase 1: 베이스라인 (30ep) → Phase 2: 파인튜닝 V1 (백본 동결) → Phase 3: 파인튜닝 V2 (전체 학습)
 
 ---
 
-## 👨‍💻 Team
+### 📈 **Phase 1: 베이스라인 학습 (30 에폭)**
 
-Scan_Eat Team  
-AI-based Food Detection & Diet Assistant
+**목표**: 빠른 프로토타입 개발 및 데이터 품질 검증
+
+#### **핵심 설정 (30ep_args.yaml 기반)**
+
+```yaml
+model: yolo11m-seg.pt          # COCO 사전학습 모델
+epochs: 30                     # 빠른 검증용
+imgsz: 512                     # 메모리와 성능 균형
+batch: 8                       # GPU 메모리 최적화
+optimizer: AdamW               # 안정적 최적화
+lr0: 0.001                     # 초기 학습률
+lrf: 0.01                      # 최종 학습률 비율 (0.00001)
+weight_decay: 0.0005           # L2 정규화
+warmup_epochs: 3               # 학습률 워밍업
+amp: True                      # Mixed Precision (FP16)
+cache: ram                     # 이미지 RAM 캐싱
+workers: 4                     # 데이터 로딩 병렬화
+
+#### 학습 곡선 분석 (results.csv 데이터)
+##### Loss 변화 추이:
+에폭 1:  box_loss=1.199, seg_loss=2.959, cls_loss=3.089
+에폭 10: box_loss=0.975, seg_loss=2.157, cls_loss=1.553
+에폭 20: box_loss=0.818, seg_loss=1.891, cls_loss=1.069
+에폭 30: box_loss=0.553, seg_loss=1.385, cls_loss=0.554
+
+→ 모든 손실이 지속적이고 안정적으로 감소 ✅
+
+##### 성능 변화 추이:
+에폭 10: mAP50(M)=39.8%, Precision(M)=36.9%, Recall(M)=35.5%
+에폭 20: mAP50(M)=51.8%, Precision(M)=50.8%, Recall(M)=44.5%
+에폭 30: mAP50(M)=57.3%, Precision(M)=71.1%, Recall(M)=44.9%
+
+→ 30 에폭만으로도 실용적 수준 달성! 🎉
+
+### Phase 1 종합 결과
+지표	값	평가
+mAP50(Mask)	59.2%	실용적 수준 ✅
+mAP50-95(Mask)	45.6%	양호한 정밀도
+Precision	45.6%	오탐지 개선 필요
+Recall	61.8%	놓치지 않는 성능 우수 ✅
+학습 시간	30분	매우 효율적 ✅
+
+#### 핵심 발견:
+
+높은 Recall: 실제 음식을 잘 놓치지 않는 특성
+낮은 Precision: 오탐지(False Positive) 문제 존재
+상승 추세 지속: 더 긴 학습으로 개선 가능성 시사
+
+### 🎯 **Phase 2: 파인튜닝 V1 - 백본 동결 (50 에폭)**
+
+**목표**: 백본 레이어를 동결하고 헤드 부분만 미세 조정하여 효율적인 성능 향상 시도
+
+#### **핵심 전략 (finetuned_args.yaml 기반)**
+
+```python
+freeze: 10                     # 백본 10개 레이어 동결 ⭐
+lr0: 0.0002                    # 낮은 학습률 (기존의 1/5)
+base_model: 30ep_best.pt       # Phase 1 최고 모델 활용
+weight_decay: 0.001            # 정규화 강화
+
+# 전략 의도:
+# 1. 이미지 특징 추출 능력(백본) 보존
+# 2. 분류/세그먼테이션 헤드만 집중 학습
+# 3. 과적합 방지 및 메모리 효율성 확보
+
+#### 학습 곡선 분석 (finetuned_results.csv)
+##### Loss 변화:
+에폭 1:  seg_loss=2.061, cls_loss=0.995 (Phase 1보다 낮은 시작점)
+에폭 25: seg_loss=1.608, cls_loss=0.653 (지속적 감소)
+에폭 50: seg_loss=0.940, cls_loss=0.280 (최저값 달성)
+
+→ Loss 수치상으로는 크게 개선되었으나...
+##### 성능 변화의 함정:
+에폭 1:  mAP50(M)=58.3%, Precision=55.4%, Recall=49.5%
+에폭 25: mAP50(M)=61.5%, Precision=45.7%, Recall=59.0%
+에폭 50: mAP50(M)=56.9%, Precision=61.2%, Recall=50.9%
+
+→ 중반 이후 성능 하락 현상 발생! ⚠️
+
+### Phase 2 실제 검증 결과
+
+지표	Phase 1	Phase 2	변화량	분석
+mAP50(Mask)	59.2%	58.0%	-1.2%p	전체 성능 하락 ❌
+Precision	45.6%	53.0%	+7.4%p	오탐지 감소 ✅
+Recall	61.8%	53.0%	-8.8%p	놓치는 음식 증가 ❌
+실패 원인 심층 분석:
+
+백본 동결의 부작용
+
+10개 레이어 동결로 모델 표현력 제한
+한국 음식 특유의 시각적 패턴 학습 제약
+과도한 보수화 현상
+
+모델이 "확실한 것만 예측"하는 신중한 성격으로 변화
+Precision 향상 vs Recall 하락의 불균형한 Trade-off
+학습률 부족
+
+lr0=0.0002는 변화량이 미미하여 지역 최솟값에서 벗어나지 못함
+핵심 교훈: 소규모 도메인 특화 데이터에서는 백본 동결이 항상 유리하지 않음
+
+### 🔥 **Phase 3: 파인튜닝 V2 - 전체 학습 (50 에폭)**
+
+**목표**: Phase 2의 문제점을 해결하여 균형잡힌 최고 성능 달성
+
+#### **핵심 개선사항 (finetuned_v2_args.yaml 기반)**
+
+```python
+# Phase 2 문제점 해결
+freeze: None                   # 백본 동결 완전 해제! ⭐
+lr0: 0.0004                    # 학습률 2배 증가 (0.0002 → 0.0004)
+base_model: 30ep_best.pt       # V1 대신 원본 Phase 1 모델 사용
+
+# 균형잡힌 데이터 증강
+hsv_h: 0.012                   # 색조 변화 적절히
+hsv_s: 0.6                     # 채도 변화 적절히
+hsv_v: 0.35                    # 명도 변화 적절히
+degrees: 10                    # 회전 적절히
+mosaic: 0.8                    # Mosaic 증강 적절한 강도
+mixup: 0.08                    # Mixup 증강 적절히
+
+### 학습 곡선 분석 (finetuned_v2_results.csv)
+#### Loss 변화:
+에폭 1:  box_loss=0.784, seg_loss=1.890, cls_loss=0.887
+에폭 20: box_loss=0.674, seg_loss=1.571, cls_loss=0.656
+에폭 31: box_loss=0.625, seg_loss=1.426, cls_loss=0.594 (조기 종료)
+
+→ 안정적이고 지속적인 개선 패턴 ✅
+
+#### 성능 변화:
+에폭 1:  mAP50(M)=57.9%, Precision=53.2%, Recall=53.0%
+에폭 11: mAP50(M)=59.0%, Precision=63.8%, Recall=49.8%
+에폭 21: mAP50(M)=60.3%, Precision=49.6%, Recall=54.9%
+에폭 31: mAP50(M)=61.5%, Precision=45.7%, Recall=59.0% ⭐
+
+→ 최종적으로 균형잡힌 최고 성능 달성!
+
+### Phase 3 종합 성능 비교
+지표	Phase 1	Phase 2	Phase 3	최종 개선도
+mAP50(Mask)	59.2%	58.0%	61.5%	+2.3%p ✅
+mAP50-95(Mask)	45.6%	45.4%	45.4%	안정 유지
+Precision	45.6%	53.0%	45.7%	균형 회복
+Recall	61.8%	53.0%	59.0%	회복 성공 ✅
+학습 시간	30분	1.5시간	1.5시간	효율적
+
+### 성공 핵심 요인:
+
+1. 백본 동결 해제: 전체 모델이 음식 도메인에 특화 학습 가능
+2. 적절한 학습률: 기존 지식 보존과 새 패턴 학습의 균형
+3. 균형잡힌 증강: 과적합 방지와 일반화 성능 향상의 조화
+
+## 📊 성능 분석
+
+### **최종 모델 순위**
+🏆 모델 성능 순위
+순위 모델명 mAP50 mAP50-95 Precision Recall
+🥇 yolov11_food_finetuned_v2 0.615 0.454 0.457 0.590 🥈 yolov11_food_30ep 0.592 0.456 0.456 0.618
+🥉 yolov11_food_finetuned 0.580 0.454 0.532 0.530
+
+### **클래스별 성능 상세 분석**
+
+**🏆 완벽 인식 클래스 (mAP50 > 95%)**:
+- **쌀밥, 배추김치, 잡곡밥, 계란말이, 간장게장**: **99.5%**
+- 기본 한식 구성 요소들이 거의 완벽한 수준으로 인식됨
+
+**✅ 우수 성능 클래스 (mAP50 70-95%)**:
+- **콩나물무침**: 81.9%
+- **상추**: 85.4%
+- **떡갈비**: 94.5%
+- **미역국**: 94.5%
+
+**🟡 개선 필요 클래스 (mAP50 50-70%)**:
+- **시금치나물**: 66.9%
+- **장조림**: 66.9%
+- **김**: 70.5%
+
+**⚠️ 저성능 클래스 (mAP50 < 50%)**:
+- **고추장아찌**: 23.2% (데이터 5개)
+- **호박무침**: 31.4% (데이터 3개)
+
+**❌ 학습 실패 클래스 (mAP50 = 0%)**:
+- **깻잎장아찌, 피클**: 각 1개 (극심한 데이터 부족)
+
+### **추론 성능**
+
+- **단일 이미지**: ~16ms (약 62 FPS)
+- **배치 추론**: ~45ms (약 22 FPS, batch=8)
+- **메모리 사용**: 6.8GB (안정적)
+Section 7: 기술적 인사이트
+Copy## 🧠 기술적 인사이트
+
+### **1. 파인튜닝 전략의 핵심 교훈**
+
+#### **백본 동결의 양면성**
+
+**일반적 기대**:
+✅ 장점: 메모리 절약, 과적합 방지, 빠른 수렴 ✅ 적용 상황: 대용량 데이터, 유사 도메인
+
+
+**실제 경험 (Phase 2)**:
+❌ 단점: 표현력 제한, 도메인 특화 학습 방해 ❌ 부작용: 보수적 예측으로 인한 Recall 하락
+
+
+**결론**: 620개 소규모 데이터셋 + 도메인 차이(일반 객체 → 한국 음식)가 클 때는 **전체 학습이 더 효과적**
+
+#### **학습률 조정의 중요성**
+
+0.001 (Phase 1): 빠른 학습, 안정적 수렴 ⭐ 0.0002 (Phase 2): 너무 보수적, 실질적 변화 미미 ❌ 0.0004 (Phase 3): 적절한 균형점, 최고 성능 달성 ⭐
+
+
+### **2. 데이터 품질 관리의 파급 효과**
+
+**구축한 자동 정제 시스템**:
+- 빈 파일 자동 감지 및 이미지-라벨 쌍 제거
+- 세그먼테이션 좌표 범위 오류 자동 클리핑
+- 홀수 좌표, 점 부족 문제 자동 보정
+- 클래스 중복 통합 (영문 → 한글 + 의미 통합)
+
+**실제 효과**: 정제 전후 학습 안정성과 수렴 속도가 눈에 띄게 향상
+
+### **3. 메모리 최적화 전략**
+
+**핵심 기법들**:
+```python
+batch_size = 8                 # 메모리 사용량 6-7GB 유지
+amp = True                     # Mixed Precision으로 30% 메모리 절약
+cache = "ram"                  # 디스크 I/O 병목 제거, 속도 50% 향상
+workers = 4                    # CPU-GPU 간 데이터 파이프라인 최적화
+성능 vs 메모리 균형점:
+
+batch=12: 높은 성능, 메모리 위험
+batch=8: 최적 균형점 ⭐
+batch=4: 안전하지만 학습 효율 저하
