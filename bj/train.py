@@ -39,13 +39,18 @@ def main():
     add_maskformer2_config(cfg)
     cfg.set_new_allowed(True) 
     
-    # 1. 모델 기본 구조 불러오기
-    config_path = r"C:\scan_eat\Mask2Former\configs\coco\panoptic-segmentation\swin\maskformer2_swin_tiny_bs16_50ep.yaml"
+    # 1. 베테랑 모델의 설정 파일로 변경 (Instance Segmentation 전용)
+    # 기존 panoptic-segmentation 대신 instance-segmentation용 yaml을 쓰는 것이 더 정확합니다.
+    config_path = r"C:\scan_eat\Mask2Former\configs\coco\instance-segmentation\swin\maskformer2_swin_tiny_bs16_50ep.yaml"
     cfg.merge_from_file(config_path)
     
+    # 2. 베테랑의 '지식(가중치)' 직접 주입 
+    cfg.MODEL.WEIGHTS = r"C:\scan_eat\weights\model_final_86143f.pkl"
+
+    # 3. 클래스 수 설정 (기존 코드 유지)
     cfg.MODEL.SEM_SEG_HEAD.NUM_CLASSES = 44
     cfg.MODEL.MASK_FORMER.NUM_CLASSES = 44
-    cfg.INPUT.MASK_FORMAT = "bitmask" 
+    cfg.INPUT.MASK_FORMAT = "bitmask"
     
     # ====================================================================
     # 🎛️ [파인튜닝 다이얼 1] 데이터 자동 증강 (Data Augmentation)
@@ -58,11 +63,11 @@ def main():
     cfg.INPUT.MIN_SIZE_TEST = 512
     cfg.INPUT.MAX_SIZE_TEST = 512
     
-    # ====================================================================
-    # 🎛️ [파인튜닝 다이얼 2] 이어달리기 바통 터치 (Pre-trained Weights)
-    # ====================================================================
-    # (의미) 쌩 Swin 백본이 아니라, 어제 1차로 학습을 마친 '우리의 뇌'를 가져옵니다.
-    cfg.MODEL.WEIGHTS = r"C:\scan_eat\output\model_final.pth"
+    # # ====================================================================
+    # # 🎛️ [파인튜닝 다이얼 2] 이어달리기 바통 터치 (Pre-trained Weights)
+    # # ====================================================================
+    # # (의미) 쌩 Swin 백본이 아니라, 어제 1차로 학습을 마친 '우리의 뇌'를 가져옵니다.
+    # cfg.MODEL.WEIGHTS = r"C:\scan_eat\output\model_final.pth"
     
     # 모델 내부 크기 세팅 (고정)
     cfg.MODEL.SEM_SEG_HEAD.CONVS_DIM = 256
@@ -98,7 +103,7 @@ def main():
     # ====================================================================
 
     # 저장 폴더를 phase2(2단계)로 분리하여 어제 결과와 안 섞이게 보호합니다.
-    cfg.OUTPUT_DIR = "../output" 
+    cfg.OUTPUT_DIR = "../output_coco_maskformer2_swin_tiny_bs16_50ep_phase2" 
     os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
     print("\n🚀 2차 파인튜닝 시작! (데이터 증강 및 스케줄러 적용 완료)")

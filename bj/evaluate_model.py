@@ -28,9 +28,11 @@ def main():
     cfg.set_new_allowed(True)
     
     # 설정 파일 및 완성된 모델(뇌) 로드
-    config_path = r"C:\scan_eat\Mask2Former\configs\coco\panoptic-segmentation\swin\maskformer2_swin_tiny_bs16_50ep.yaml"
+    config_path = r"C:\scan_eat\Mask2Former\configs\coco\instance-segmentation\swin\maskformer2_swin_tiny_bs16_50ep.yaml"
     cfg.merge_from_file(config_path)
-    cfg.MODEL.WEIGHTS = r"C:\scan_eat\output_phase2\model_final.pth"
+    
+    # 2. 오늘 학습 완료된 'Phase 2' 모델 로드
+    cfg.MODEL.WEIGHTS = r"C:\scan_eat\output\model_final.pth"
     
     # 학습 때와 동일한 강제 보정 세팅
     cfg.MODEL.SEM_SEG_HEAD.NUM_CLASSES = 44
