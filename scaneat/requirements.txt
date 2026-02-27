@@ -1,0 +1,40 @@
+# 기본 라이브러리
+ultralytics>=8.0.0
+torch>=2.0.0
+opencv-python>=4.8.0
+pillow>=10.0.0
+numpy>=1.24.0
+
+# 데이터 증강
+albumentations>=1.3.0
+
+# 유틸
+pyyaml>=6.0
+tqdm>=4.65.0
+matplotlib>=3.7.0
+```
+
+---
+
+## 📦 최종 폴더 구조 (당신이 만들 것)
+```
+scaneat/
+├── README.md                        ✅ 복사
+├── .gitignore                       ✅ 복사
+├── requirements.txt                 ✅ 새로 만들기 or 복사
+│
+├── notebooks/
+│   └── scaneat_training.ipynb      📥 Colab에서 다운로드
+│
+├── deployment/
+│   ├── flask/
+│   │   ├── app.py                  ✅ scaneat_flask_app.py 복사
+│   │   └── requirements.txt        ✅ 복사
+│   │
+│   └── android/
+│       ├── MainActivity.kt         ✅ 복사
+│       ├── activity_main.xml       ✅ 복사
+│       └── README.md               ✅ ANDROID_SETUP.md 복사
+│
+└── models/
+    └── README.md                   ✅ models_README.md 복사
