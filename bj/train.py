@@ -32,6 +32,24 @@ class MaskFormerTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         mapper = MaskFormerInstanceDatasetMapper(cfg, is_train=True)
         return build_detection_train_loader(cfg, mapper=mapper)
+    
+    # # 백본 동결을 위해 build_model 메서드를 오버라이드합니다.
+    # @classmethod
+    # def build_model(cls, cfg):
+    #     """
+    #     모델을 빌드한 직후에 백본의 파라미터를 고정(Freeze)합니다.
+    #     """
+    #     model = super().build_model(cfg)
+        
+    #     # Swin-Transformer 백본 고정
+    #     if hasattr(model, "backbone"):
+    #         for param in model.backbone.parameters():
+    #             param.requires_grad = False
+    #         print("❄️ [실험] 백본(Backbone) 동결 완료! Head만 학습을 진행합니다.")
+    #     else:
+    #         print("⚠️ 백본을 찾을 수 없어 동결에 실패했습니다.")
+            
+    #     return model
 
 def main():
     register_datasets()
@@ -44,8 +62,12 @@ def main():
     config_path = r"C:\scan_eat\Mask2Former\configs\coco\instance-segmentation\swin\maskformer2_swin_tiny_bs16_50ep.yaml"
     cfg.merge_from_file(config_path)
     
-    # 2. 베테랑의 '지식(가중치)' 직접 주입 
-    cfg.MODEL.WEIGHTS = r"C:\scan_eat\weights\model_final_86143f.pkl"
+    # # 2. 베테랑의 '지식(가중치)' 직접 주입 
+    # cfg.MODEL.WEIGHTS = r"C:\scan_eat\weights\model_final_86143f.pkl"
+
+    # 2-1. 한번 학습 완료한 모델을 이어서 학습
+    cfg.MODEL.WEIGHTS = r"C:\scan_eat\output_frozen_backbone\model_final.pth" 
+
 
     # 3. 클래스 수 설정 (기존 코드 유지)
     cfg.MODEL.SEM_SEG_HEAD.NUM_CLASSES = 44
@@ -89,7 +111,7 @@ def main():
     cfg.SOLVER.IMS_PER_BATCH = 2  # 한 번에 몇 장의 사진을 볼 것인가? (VRAM이 넉넉하면 4로 올려도 좋음)
     
     # 2. 학습률 (Learning Rate, 보폭)
-    cfg.SOLVER.BASE_LR = 0.00005  # 어제(0.0001)보다 절반으로 줄여서, 붓 터치를 아주 섬세하게 진행함
+    cfg.SOLVER.BASE_LR = 0.00001  
     
     # 3. 최대 학습 횟수 (Max Iterations)
     cfg.SOLVER.MAX_ITER = 10000   # 앞으로 추가로 1만 번 더 사진을 보며 훈련함
@@ -103,7 +125,7 @@ def main():
     # ====================================================================
 
     # 저장 폴더를 phase2(2단계)로 분리하여 어제 결과와 안 섞이게 보호합니다.
-    cfg.OUTPUT_DIR = "../output_coco_maskformer2_swin_tiny_bs16_50ep_phase2" 
+    cfg.OUTPUT_DIR = "../output_unfreeze_backbone" 
     os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
     print("\n🚀 2차 파인튜닝 시작! (데이터 증강 및 스케줄러 적용 완료)")

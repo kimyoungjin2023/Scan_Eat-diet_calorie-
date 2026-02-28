@@ -32,7 +32,7 @@ def main():
     cfg.merge_from_file(config_path)
     
     # 2. 오늘 학습 완료된 'Phase 2' 모델 로드
-    cfg.MODEL.WEIGHTS = r"C:\scan_eat\output\model_final.pth"
+    cfg.MODEL.WEIGHTS = r"C:\scan_eat\output_unfreeze_backbone\model_final.pth"
     
     # 학습 때와 동일한 강제 보정 세팅
     cfg.MODEL.SEM_SEG_HEAD.NUM_CLASSES = 44
