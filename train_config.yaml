@@ -1,0 +1,33 @@
+# ──────────────────────────────────────────────
+#  DINOv2 + Mask2Former 학습 설정
+# ──────────────────────────────────────────────
+
+# 모델 설정
+model:
+  dino_backbone: "facebook/dinov2-base"           # dinov2-small / base / large / giant
+  pretrained_mask2former: "facebook/mask2former-swin-base-coco-instance"
+  freeze_dino: false                              # true = DINOv2 백본 freeze (빠른 실험용)
+
+# 데이터 경로 (convert_yolo_to_coco.py 실행 후 생성된 경로)
+data:
+  train_images: "dataset/images/train"
+  val_images:   "dataset/images/val"
+  img_size: 640
+
+# COCO JSON 경로
+annotation:
+  train_json: "coco_annotations/train.json"
+  val_json:   "coco_annotations/val.json"
+
+# 학습 하이퍼파라미터
+train:
+  epochs:       50
+  batch_size:   4          # 단일 GPU 기준. VRAM 부족 시 2로 줄이세요
+  num_workers:  4
+  lr:           1.0e-4
+  weight_decay: 1.0e-4
+  amp:          true       # Mixed Precision (VRAM 절약)
+  save_every:   10         # N epoch마다 체크포인트 저장
+
+# 출력 경로
+output_dir: "outputs"
