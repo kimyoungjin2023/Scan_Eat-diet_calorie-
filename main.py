@@ -12,7 +12,7 @@ from depth.visualizer import draw_depth_map, draw_results
 
 # ── 함수 정의는 항상 위에 ──────────────────────────
 def run_depth_size(image_path: str):
-    seg_model   = YOLO("/content/runs/segment/finetune/weights/best.pt")
+    seg_model   = YOLO("./result/run_second_fintuning/weight/best.pt")
     depth_model = DepthEstimator(model_name="Intel/dpt-large")
     size_calc   = SizeCalculator(focal_length=500.0, real_depth_scale=10.0)
 
@@ -54,17 +54,17 @@ def run_depth_size(image_path: str):
 
 # ── main()도 위에 ──────────────────────────────────
 def main():
-    print_stage("1단계: 사전 학습 시작")
-    run_train()
+    # print_stage("1단계: 사전 학습 시작")
+    # run_train()
 
-    print_stage("2단계: 파인튜닝 시작")
-    run_finetune()
+    # print_stage("2단계: 파인튜닝 시작")
+    # run_finetune()
 
     print_stage("3단계: 경량화 시작")
     export_onnx()
 
     print_stage("4단계: 깊이 추정 + 크기 계산")
-    run_depth_size("/content/test_image.jpg")
+    run_depth_size("./dataset/test/images/Img_001_0311_jpg.rf.7d125d3e909e7980eda3c135fec3481e.jpg")
 
 
 # ── if __name__ 은 딱 한 번만 ─────────────────────

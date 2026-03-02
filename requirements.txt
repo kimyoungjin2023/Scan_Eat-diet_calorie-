@@ -12,8 +12,8 @@ Pillow>=10.0.0
 
 # ── 모델 Export (ONNX) ─────────────────────────
 onnx>=1.14.0
-onnxruntime-gpu>=1.16.0
-# onnxruntime>=1.16.0  # CPU 환경
+# onnxruntime-gpu>=1.16.0
+onnxruntime>=1.16.0  # CPU 환경
 
 # ── 유틸 ────────────────────────────────────────
 tqdm>=4.65.0

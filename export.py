@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-FINETUNE_BEST_PT = "./runs/weights/best.pt"
+FINETUNE_BEST_PT = "./result/run_second_fintuning/weight/best.pt"
 
 def export_onnx():
     """ONNX 변환 - 범용적, 대부분의 환경에서 사용 가능"""
@@ -31,7 +31,7 @@ def export_int8():
         imgsz=640,
         simplify=True,
         int8=True,          # INT8 양자화
-        data="/content/drive/MyDrive/please/data.yaml",  # 양자화 캘리브레이션용
+        data="./dataset/data.yaml",  # 양자화 캘리브레이션용
     )
 
 def export_all():

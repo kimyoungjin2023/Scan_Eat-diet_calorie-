@@ -1,3 +1,6 @@
 /dataset
 /__pycache__
 /result
+/runs
+/depth/__pycache__
+/depth_runs

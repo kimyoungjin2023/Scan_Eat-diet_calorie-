@@ -1,6 +1,6 @@
 # 모든 설정값을 한 곳에서 관리
 
-DATA_YAML = "/content/drive/MyDrive/please/data.yaml"
+DATA_YAML = "./dataset/data.yaml"
 PROJECT_DIR = "runs/segment"
 
 PRETRAIN_CONFIG = dict(
