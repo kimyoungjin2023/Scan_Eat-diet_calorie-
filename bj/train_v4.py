@@ -99,7 +99,7 @@ def main():
     # 스케줄러 (더 촘촘하게 감쇄)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[15, 25, 35], gamma=0.2)
     
-    print(f"🚀 [BJ-Pro Edition] 1등 탈환을 위한 극한의 파인튜닝 시작!")
+    print(f"🚀극한의 파인튜닝 시작!")
 
     for epoch in range(45): # 더 정밀한 학습을 위해 45에폭으로 확장
         # 🔓 [2단계] 백본 일부 해제 (15 Epoch ~)
