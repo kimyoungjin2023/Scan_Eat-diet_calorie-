@@ -20,7 +20,6 @@
 - [성능 분석](#-성능-분석)
 - [기술적 인사이트](#-기술적-인사이트)
 - [향후 발전 방향](#-향후-발전-방향)
-- [실행 가이드](#-실행-가이드)
 
 ---
 
@@ -37,6 +36,7 @@
 - ✅ **Real-time Processing**: 실시간 추론 속도 확보
 - ✅ **Localization**: 영어 라벨을 한글로 변환 및 중복 통합
 
+Section 2: 주요 성과 및 데이터셋
 ## 🏆 주요 성과
 
 | 항목 | 결과 | 비고 |
@@ -47,17 +47,24 @@
 | **데이터 정제** | 30개 파일 수정 | 자동 품질 관리 |
 | **클래스 통합** | 44개 → 41개 | 중복 제거 |
 
+
 ---
+
 
 ## 📊 데이터셋 분석
 
 ### **데이터 구성**
+
 총 데이터: 652개 → 620개 (정제 후) 
+
 ├── Train: 614개 (99.0%) 
+
 ├── Valid: 38개 (6.1%) 
-└── Test: 10개
+
+└── Test: 별도 분리 예정
 
 총 인스턴스: 1,147개 평균 음식/이미지: 1.85개 클래스 수: 41개 (중복 통합 후)
+
 
 ### **전처리 과정**
 
@@ -68,28 +75,31 @@
 - 홀수 좌표 보정: 마지막 좌표 제거
 - 점 부족 문제: 3개 미만 점 제거
 
+
 **2단계: 한글 매핑 및 클래스 통합**
-```python
 # 중복 통합 예시
-'Kimch_Kimch' + 'Kimchi' + 'Kimchi_Kimchi' → '배추김치'
-'Bokkeum_DriedSquidBokkeum' + 'Bokkeum_SpicyDriedSquidBokkeum' → '진미채볶음'
-'Rice_WhiteRice' → '쌀밥'
-'Rice_MixedGrainRice' → '잡곡밥'
+- 'Kimch_Kimch' + 'Kimchi' + 'Kimchi_Kimchi' → '배추김치'
+- 'Bokkeum_DriedSquidBokkeum' + 'Bokkeum_SpicyDriedSquidBokkeum' → '진미채볶음'
+- 'Rice_WhiteRice' → '쌀밥'
+- 'Rice_MixedGrainRice' → '잡곡밥'
+
 
 결과: 44개 클래스 → 41개 클래스
-
 클래스 분포 분석 (상위 10개)
-순위	음식명	개수	성능(mAP50)
-1	쌀밥	89	99.5% ✅
-2	배추김치	76	99.5% ✅
-3	콩나물무침	52	81.9% ✅
-4	상추	48	85.4% ✅
-5	시금치나물	42	66.9%
-6	잡곡밥	35	99.5% ✅
-7	김	32	70.5%
-8	미역국	28	94.5% ✅
-9	계란말이	25	99.5% ✅
-10	장조림	22	66.9%
+|순위	|음식명|	개수	|성능(mAP50)
+|------|------|------|------|
+1|	쌀밥	|89|	99.5% ✅ |
+2|	배추김치	|76|	99.5% ✅ |
+3|	콩나물무침	|52|	81.9% ✅ |
+4|	상추	|48|	85.4% ✅ |
+5|	시금치나물	|42|	66.9% |
+6|	잡곡밥	|35|	99.5% ✅ |
+7|	김|	32|	70.5% |
+8|	미역국|28|	94.5% ✅ |
+9|	계란말이|	25|	99.5% ✅ |
+10|	장조림|	22|	66.9% |
+
+
 ⚠️ 문제 클래스 (mAP50 = 0%):
 
 깻잎장아찌: 1개 (데이터 부족)
@@ -97,13 +107,14 @@
 고추장아찌: 5개 (데이터 부족)
 
 
-## **Section 3: Phase 1 베이스라인 학습**
+---
 
 ## 🚀 3단계 모델링 여정
 
 ### **전체 학습 전략**
 
 Phase 1: 베이스라인 (30ep) → Phase 2: 파인튜닝 V1 (백본 동결) → Phase 3: 파인튜닝 V2 (전체 학습)
+
 
 ---
 
@@ -126,36 +137,42 @@ warmup_epochs: 3               # 학습률 워밍업
 amp: True                      # Mixed Precision (FP16)
 cache: ram                     # 이미지 RAM 캐싱
 workers: 4                     # 데이터 로딩 병렬화
+```
 
-#### 학습 곡선 분석 (results.csv 데이터)
-##### Loss 변화 추이:
-에폭 1:  box_loss=1.199, seg_loss=2.959, cls_loss=3.089
-에폭 10: box_loss=0.975, seg_loss=2.157, cls_loss=1.553
-에폭 20: box_loss=0.818, seg_loss=1.891, cls_loss=1.069
-에폭 30: box_loss=0.553, seg_loss=1.385, cls_loss=0.554
+
+학습 곡선 분석 (results.csv 데이터)
+Loss 변화 추이:
+
+- 에폭 1:  box_loss=1.199, seg_loss=2.959, cls_loss=3.089
+- 에폭 10: box_loss=0.975, seg_loss=2.157, cls_loss=1.553
+- 에폭 20: box_loss=0.818, seg_loss=1.891, cls_loss=1.069
+- 에폭 30: box_loss=0.553, seg_loss=1.385, cls_loss=0.554
 
 → 모든 손실이 지속적이고 안정적으로 감소 ✅
 
-##### 성능 변화 추이:
-에폭 10: mAP50(M)=39.8%, Precision(M)=36.9%, Recall(M)=35.5%
-에폭 20: mAP50(M)=51.8%, Precision(M)=50.8%, Recall(M)=44.5%
-에폭 30: mAP50(M)=57.3%, Precision(M)=71.1%, Recall(M)=44.9%
+성능 변화 추이:
+
+- 에폭 10: mAP50(M)=39.8%, Precision(M)=36.9%, Recall(M)=35.5%
+- 에폭 20: mAP50(M)=51.8%, Precision(M)=50.8%, Recall(M)=44.5%
+- 에폭 30: mAP50(M)=57.3%, Precision(M)=71.1%, Recall(M)=44.9%
 
 → 30 에폭만으로도 실용적 수준 달성! 🎉
+Phase 1 종합 결과
+|지표|	값|	평가|
+|------|------|------|
+|mAP50(Mask)	|59.2%|	실용적 수준 ✅|
+|mAP50-95(Mask)	|45.6%|	양호한 정밀도|
+|Precision	|45.6%|	오탐지 개선 필요|
+|Recall	|61.8%|	놓치지 않는 성능 우수 ✅|
+|학습 시간	|30분|	매우 효율적 ✅|
 
-### Phase 1 종합 결과
-지표	값	평가
-mAP50(Mask)	59.2%	실용적 수준 ✅
-mAP50-95(Mask)	45.6%	양호한 정밀도
-Precision	45.6%	오탐지 개선 필요
-Recall	61.8%	놓치지 않는 성능 우수 ✅
-학습 시간	30분	매우 효율적 ✅
+핵심 발견:
 
-#### 핵심 발견:
+- 높은 Recall: 실제 음식을 잘 놓치지 않는 특성
+- 낮은 Precision: 오탐지(False Positive) 문제 존재
+- 상승 추세 지속: 더 긴 학습으로 개선 가능성 시사
 
-높은 Recall: 실제 음식을 잘 놓치지 않는 특성
-낮은 Precision: 오탐지(False Positive) 문제 존재
-상승 추세 지속: 더 긴 학습으로 개선 가능성 시사
+---
 
 ### 🎯 **Phase 2: 파인튜닝 V1 - 백본 동결 (50 에폭)**
 
@@ -168,52 +185,60 @@ freeze: 10                     # 백본 10개 레이어 동결 ⭐
 lr0: 0.0002                    # 낮은 학습률 (기존의 1/5)
 base_model: 30ep_best.pt       # Phase 1 최고 모델 활용
 weight_decay: 0.001            # 정규화 강화
+```
 
-# 전략 의도:
-# 1. 이미지 특징 추출 능력(백본) 보존
-# 2. 분류/세그먼테이션 헤드만 집중 학습
-# 3. 과적합 방지 및 메모리 효율성 확보
+#### 전략 의도:
+1. 이미지 특징 추출 능력(백본) 보존
+2. 분류/세그먼테이션 헤드만 집중 학습
+3. 과적합 방지 및 메모리 효율성 확보
+학습 곡선 분석 (finetuned_results.csv)
+Loss 변화:
 
-#### 학습 곡선 분석 (finetuned_results.csv)
-##### Loss 변화:
-에폭 1:  seg_loss=2.061, cls_loss=0.995 (Phase 1보다 낮은 시작점)
-에폭 25: seg_loss=1.608, cls_loss=0.653 (지속적 감소)
-에폭 50: seg_loss=0.940, cls_loss=0.280 (최저값 달성)
+- 에폭 1:  seg_loss=2.061, cls_loss=0.995 (Phase 1보다 낮은 시작점)
+- 에폭 25: seg_loss=1.608, cls_loss=0.653 (지속적 감소)
+- 에폭 50: seg_loss=0.940, cls_loss=0.280 (최저값 달성)
 
 → Loss 수치상으로는 크게 개선되었으나...
-##### 성능 변화의 함정:
-에폭 1:  mAP50(M)=58.3%, Precision=55.4%, Recall=49.5%
-에폭 25: mAP50(M)=61.5%, Precision=45.7%, Recall=59.0%
-에폭 50: mAP50(M)=56.9%, Precision=61.2%, Recall=50.9%
+성능 변화의 함정:
+
+- 에폭 1:  mAP50(M)=58.3%, Precision=55.4%, Recall=49.5%
+- 에폭 25: mAP50(M)=61.5%, Precision=45.7%, Recall=59.0%
+- 에폭 50: mAP50(M)=56.9%, Precision=61.2%, Recall=50.9%
 
 → 중반 이후 성능 하락 현상 발생! ⚠️
+Phase 2 실제 검증 결과
 
-### Phase 2 실제 검증 결과
+|지표	|Phase 1	|Phase 2	|변화량|	분석|
+|------|------|------|------|------|
+|mAP50(Mask)|	59.2%	|58.0%	|-1.2%p	|전체 성능 하락 ❌|
+|Precision	|45.6%	|53.0%	|+7.4%p	|오탐지 감소 ✅|
+|Recall	|61.8%	|53.0%	|-8.8%p	|놓치는 음식 증가 ❌|
 
-지표	Phase 1	Phase 2	변화량	분석
-mAP50(Mask)	59.2%	58.0%	-1.2%p	전체 성능 하락 ❌
-Precision	45.6%	53.0%	+7.4%p	오탐지 감소 ✅
-Recall	61.8%	53.0%	-8.8%p	놓치는 음식 증가 ❌
 실패 원인 심층 분석:
 
-백본 동결의 부작용
-
-10개 레이어 동결로 모델 표현력 제한
+1. 백본 동결의 부작용
+- 10개 레이어 동결로 모델 표현력 제한
 한국 음식 특유의 시각적 패턴 학습 제약
-과도한 보수화 현상
 
-모델이 "확실한 것만 예측"하는 신중한 성격으로 변화
+
+2. 과도한 보수화 현상
+- 모델이 "확실한 것만 예측"하는 신중한 성격으로 변화
 Precision 향상 vs Recall 하락의 불균형한 Trade-off
-학습률 부족
 
-lr0=0.0002는 변화량이 미미하여 지역 최솟값에서 벗어나지 못함
+
+3.학습률 부족
+- lr0=0.0002는 변화량이 미미하여 지역 최솟값에서 벗어나지 못함
 핵심 교훈: 소규모 도메인 특화 데이터에서는 백본 동결이 항상 유리하지 않음
+
+
+---
 
 ### 🔥 **Phase 3: 파인튜닝 V2 - 전체 학습 (50 에폭)**
 
 **목표**: Phase 2의 문제점을 해결하여 균형잡힌 최고 성능 달성
 
 #### **핵심 개선사항 (finetuned_v2_args.yaml 기반)**
+
 
 ```python
 # Phase 2 문제점 해결
@@ -228,50 +253,66 @@ hsv_v: 0.35                    # 명도 변화 적절히
 degrees: 10                    # 회전 적절히
 mosaic: 0.8                    # Mosaic 증강 적절한 강도
 mixup: 0.08                    # Mixup 증강 적절히
+```
 
-### 학습 곡선 분석 (finetuned_v2_results.csv)
+
+#### 학습 곡선 분석 (finetuned_v2_results.csv)
 #### Loss 변화:
-에폭 1:  box_loss=0.784, seg_loss=1.890, cls_loss=0.887
-에폭 20: box_loss=0.674, seg_loss=1.571, cls_loss=0.656
-에폭 31: box_loss=0.625, seg_loss=1.426, cls_loss=0.594 (조기 종료)
+
+- 에폭 1:  box_loss=0.784, seg_loss=1.890, cls_loss=0.887
+- 에폭 20: box_loss=0.674, seg_loss=1.571, cls_loss=0.656
+- 에폭 31: box_loss=0.625, seg_loss=1.426, cls_loss=0.594 (조기 종료)
+
 
 → 안정적이고 지속적인 개선 패턴 ✅
+성능 변화:
 
-#### 성능 변화:
-에폭 1:  mAP50(M)=57.9%, Precision=53.2%, Recall=53.0%
-에폭 11: mAP50(M)=59.0%, Precision=63.8%, Recall=49.8%
-에폭 21: mAP50(M)=60.3%, Precision=49.6%, Recall=54.9%
-에폭 31: mAP50(M)=61.5%, Precision=45.7%, Recall=59.0% ⭐
+- 에폭 1:  mAP50(M)=57.9%, Precision=53.2%, Recall=53.0%
+- 에폭 11: mAP50(M)=59.0%, Precision=63.8%, Recall=49.8%
+- 에폭 21: mAP50(M)=60.3%, Precision=49.6%, Recall=54.9%
+- 에폭 31: mAP50(M)=61.5%, Precision=45.7%, Recall=59.0% ⭐
 
 → 최종적으로 균형잡힌 최고 성능 달성!
 
-### Phase 3 종합 성능 비교
-지표	Phase 1	Phase 2	Phase 3	최종 개선도
-mAP50(Mask)	59.2%	58.0%	61.5%	+2.3%p ✅
-mAP50-95(Mask)	45.6%	45.4%	45.4%	안정 유지
-Precision	45.6%	53.0%	45.7%	균형 회복
-Recall	61.8%	53.0%	59.0%	회복 성공 ✅
-학습 시간	30분	1.5시간	1.5시간	효율적
+Phase 3 종합 성능 비교
 
-### 성공 핵심 요인:
+|지표|Phase 1|	Phase 2|	Phase 3|	최종 개선도|
+|------|------|------|------|------|
+|mAP50(Mask)|	59.2%|	58.0%|	61.5%|	+2.3%p ✅|
+|mAP50-95(Mask)	|45.6%	|45.4%	|45.4%	|안정 유지|
+|Precision|	45.6%|	53.0%|	45.7%|	균형 회복|
+|Recall	|61.8%	|53.0%	|59.0%	|회복 성공 ✅|
+|학습 시간|	30분|	1.5시간|	1.5시간|	효율적|
+
+성공 핵심 요인:
 
 1. 백본 동결 해제: 전체 모델이 음식 도메인에 특화 학습 가능
 2. 적절한 학습률: 기존 지식 보존과 새 패턴 학습의 균형
 3. 균형잡힌 증강: 과적합 방지와 일반화 성능 향상의 조화
 
+---
+
+## **Section 6: 최종 성능 분석**
+
 ## 📊 성능 분석
 
 ### **최종 모델 순위**
+
 🏆 모델 성능 순위
-순위 모델명 mAP50 mAP50-95 Precision Recall
-🥇 yolov11_food_finetuned_v2 0.615 0.454 0.457 0.590 🥈 yolov11_food_30ep 0.592 0.456 0.456 0.618
-🥉 yolov11_food_finetuned 0.580 0.454 0.532 0.530
+|순위| 모델명| mAP50| mAP50-95| Precision| Recall|
+|------|------|------|------|------|------|
+|🥇| yolov11_food_finetuned_v2| 0.615| 0.454| 0.457| 0.590| 
+|🥈| yolov11_food_30ep| 0.592| 0.456| 0.456| 0.618|
+|🥉| yolov11_food_finetuned| 0.580| 0.454| 0.532| 0.530|
+
 
 ### **클래스별 성능 상세 분석**
+
 
 **🏆 완벽 인식 클래스 (mAP50 > 95%)**:
 - **쌀밥, 배추김치, 잡곡밥, 계란말이, 간장게장**: **99.5%**
 - 기본 한식 구성 요소들이 거의 완벽한 수준으로 인식됨
+
 
 **✅ 우수 성능 클래스 (mAP50 70-95%)**:
 - **콩나물무침**: 81.9%
@@ -297,7 +338,7 @@ Recall	61.8%	53.0%	59.0%	회복 성공 ✅
 - **배치 추론**: ~45ms (약 22 FPS, batch=8)
 - **메모리 사용**: 6.8GB (안정적)
 Section 7: 기술적 인사이트
-Copy## 🧠 기술적 인사이트
+## 🧠 기술적 인사이트
 
 ### **1. 파인튜닝 전략의 핵심 교훈**
 
@@ -336,8 +377,180 @@ batch_size = 8                 # 메모리 사용량 6-7GB 유지
 amp = True                     # Mixed Precision으로 30% 메모리 절약
 cache = "ram"                  # 디스크 I/O 병목 제거, 속도 50% 향상
 workers = 4                    # CPU-GPU 간 데이터 파이프라인 최적화
+```
+
+
 성능 vs 메모리 균형점:
 
+
 batch=12: 높은 성능, 메모리 위험
+
 batch=8: 최적 균형점 ⭐
+
 batch=4: 안전하지만 학습 효율 저하
+
+
+
+파인튜닝 성능 역전 현상:
+
+문제: V1에서 mAP 하락 (Precision↑, Recall↓의 불균형)
+
+분석: 백본 동결 + 낮은 학습률로 인한 모델 보수화
+
+해결: V2에서 백본 해제 + 학습률 증가로 균형 회복
+
+---
+
+## **Section 8: 향후 발전 방향 (1/2)**
+
+## 🚀 향후 발전 방향
+
+### **Phase 4: 65% mAP50 달성 (단기 목표 - 1주 내)**
+
+#### **1. 앙상블 + TTA (즉시 적용 가능)** ⭐ 최우선
+
+**전략**: 서로 다른 특성을 가진 모델들을 조합하여 성능 향상
+
+```python
+# 구현 예시
+models = [
+    'yolov11_food_finetuned_v2/weights/best.pt',  # 최고 mAP50
+    'yolov11_food_30ep/weights/best.pt'           # 높은 Recall
+]
+
+ensemble = YOLO(models)
+results = ensemble.predict(
+    source='test.jpg',
+    augment=True,      # Test Time Augmentation 활성화
+    conf=0.20         # 최적 임계값
+)
+```
+
+예상 효과:
+
+개별 모델 한계 극복
+
++3-5%p 성능 향상 (64-66% mAP50 예상)
+
+추론 시간 약간 증가 (허용 가능한 수준)
+
+#### 2. Confidence Threshold 최적화
+
+현재 문제: 기본값 0.25가 최적이 아닐 수 있음
+
+# 최적값 탐색 코드
+
+```Python
+for conf in [0.15, 0.20, 0.25, 0.30, 0.35]:
+    metrics = model.val(
+        data='dataset/data.yaml',
+        conf=conf,
+        verbose=False
+    )
+    print(f"conf={conf:.2f}: mAP50={metrics.seg.map50:.3f}")
+```
+예상 결과: conf=0.20 근처에서 Recall 회복으로 +1%p 추가 향상
+
+#### 3. 문제 클래스 데이터 보강
+타겟 클래스: mAP50=0% 클래스들
+
+
+깻잎장아찌, 피클 → 각 10개 이상 데이터 수집
+
+또는 유사 클래스와 통합 (예: 장아찌류 통합)
+
+예상 효과: 전체 mAP50에 +1-2%p 기여
+
+Phase 5: VLM 연동 영양소 분석 시스템 (중기 목표 - 1개월)
+
+시스템 아키텍처
+
+[음식 사진 입력]
+        ↓
+YOLOv11 Segmentation (61.5% mAP50)
+        ↓
+음식별 마스크 + 클래스 정보
+["김치", "쌀밥", "미역국"] + 각 영역 좌표
+        ↓
+영역 크기 기반 양 추정
+김치: 전체의 15%, 쌀밥: 45%, 미역국: 30%
+        ↓
+VLM (LLaVA 1.6 / GPT-4V) 영양소 추론
+        ↓
+
+JSON 형태 영양 정보
+```json
+{
+  "김치": {"weight": "50g", "calories": "15kcal"},
+  "쌀밥": {"weight": "200g", "calories": "290kcal"},
+  "미역국": {"weight": "150g", "calories": "80kcal"},
+  "total": {"calories": "385kcal", "carbs": "65g", ...}
+}
+```
+
+핵심 구현 계획
+
+1. 세그먼트 정보 추출:
+```Python
+def extract_food_regions(seg_results):
+    foods = []
+    total_area = image.shape[0] * image.shape[1]
+    
+    for box, mask, cls in zip(boxes, masks, classes):
+        food_info = {
+            'name': korean_class_names[cls],
+            'area_ratio': mask.sum() / total_area,
+            'bbox': box.xyxy,
+            'confidence': box.conf,
+            'mask': mask
+        }
+        foods.append(food_info)
+    
+    return foods
+```
+
+2. VLM 프롬프트 엔지니어링:
+```Python
+prompt_template = """
+이 한국 음식 이미지를 영양학적으로 분석해주세요.
+
+감지된 음식 정보:
+{food_list}
+
+각 음식의 일반적인 1인분 기준으로 다음을 JSON 형식으로 추정해주세요:
+1. 예상 무게(g)
+2. 칼로리(kcal)
+3. 주요 영양소(탄수화물, 단백질, 지방)
+
+응답 형식: {JSON 예시}
+"""
+```
+
+```
+🔧 프로젝트 구조
+scan-eat-ai/
+├── dataset/                    # 원본 데이터
+│   ├── train/images & labels/
+│   ├── valid/images & labels/
+│   ├── test/images & labels/
+│   └── data.yaml
+├── src/                        # 소스 코드
+│   ├── config.py              # 설정 (한글 매핑 포함)
+│   ├── utils.py               # 공통 유틸리티
+│   ├── 1_preprocess.py        # 데이터 전처리
+│   ├── 2_train.py             # 베이스라인 학습
+│   ├── 3_test.py              # 테스트 및 시각화
+│   ├── 4_finetune_v2.py       # 최적화된 파인튜닝
+│   └── main.py                # 전체 파이프라인
+├── models/                     # 학습된 모델들
+│   ├── yolov11_food_30ep/     # Phase 1 모델
+│   ├── yolov11_food_finetuned/ # Phase 2 모델
+│   └── yolov11_food_finetuned_v2/ # Phase 3 최종 모델 ⭐
+├── results/                    # 결과물
+│   ├── visualization_results.png
+│   └── test_predictions/
+├── backup/                     # 자동 백업
+├── requirements.txt
+├── README.md
+└── LICENSE
+```
