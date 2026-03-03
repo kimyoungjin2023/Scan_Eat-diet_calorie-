@@ -9,10 +9,10 @@ def draw_depth_map(image: np.ndarray, depth_map: np.ndarray) -> np.ndarray:
 
 def draw_results(
     image: np.ndarray,
-    results: list,          # size_calculator.calculate() 결과 리스트
+    results: list,
     class_names: list,
 ) -> np.ndarray:
-    """YOLO 결과 + 크기 정보 시각화"""
+    """YOLO 결과 + 클래스명 시각화"""
     output = image.copy()
 
     for i, result in enumerate(results):
@@ -22,20 +22,12 @@ def draw_results(
         # 바운딩박스
         cv2.rectangle(output, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-        # 크기 정보 텍스트
-        text_lines = [
-            f"{cls_name}",
-            f"W: {result['real_width_cm']}cm",
-            f"H: {result['real_height_cm']}cm",
-            f"D: {result['estimated_depth_m']}m",
-        ]
-
-        for j, line in enumerate(text_lines):
-            cv2.putText(
-                output, line,
-                (x1, y1 - 10 - (j * 18)),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.55,
-                (0, 255, 0), 2,
-            )
+        # ✅ 클래스명만 출력 (real_width_cm 제거)
+        cv2.putText(
+            output, cls_name,
+            (x1, y1 - 10),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.55,
+            (0, 255, 0), 2,
+        )
 
     return output

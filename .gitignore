@@ -4,3 +4,5 @@
 /runs
 /depth/__pycache__
 /depth_runs
+.env
+/llm/__pycache__

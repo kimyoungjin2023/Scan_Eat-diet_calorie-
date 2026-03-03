@@ -1,5 +1,10 @@
-# 모든 설정값을 한 곳에서 관리
+from dotenv import load_dotenv
+import os
 
+load_dotenv()  # .env 파일 로드
+
+# 모든 설정값을 한 곳에서 관리
+FINETUNE_BEST_ONNX = "./result/run_second_fintuning/weight/best.onnx"
 DATA_YAML = "./dataset/data.yaml"
 PROJECT_DIR = "runs/segment"
 
@@ -82,3 +87,8 @@ FINETUNE_CONFIG = dict(
     erasing=0.2,
     crop_fraction=1.0,
 )
+
+# ── Groq 설정 ──────────────────────────────────
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL   = "llama-3.1-8b-instant"  # 무료 모델
