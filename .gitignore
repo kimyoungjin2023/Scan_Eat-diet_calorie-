@@ -7,6 +7,7 @@ models/
 *.pkl
 sam/
 weights/
+.env
 
 # 2. 외부 라이브러리 (⭐ 깃허브 충돌/용량 폭발 방지 필수!)
 detectron2/
