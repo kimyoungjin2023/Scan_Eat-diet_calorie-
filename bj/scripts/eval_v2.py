@@ -14,7 +14,7 @@ import json
 DATASET_ROOT = "C:/scan_eat/data"
 VAL_JSON = os.path.join(DATASET_ROOT, "valid/_annotations.coco_final.json")
 VAL_IMG = os.path.join(DATASET_ROOT, "valid/images")
-MODEL_PATH = "best_maskrcnn_bj_the_last.pth"
+MODEL_PATH = r"C:\scan_eat\weights\best_maskrcnn_bj_final.pth"
 
 def get_model(num_classes):
     model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights=None)

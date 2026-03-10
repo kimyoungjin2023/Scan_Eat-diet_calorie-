@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCAN Eat - AI 영양 분석 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+        .progress-bar { transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .meal-card:hover { transform: translateY(-8px); }
+    </style>
+</head>
+<body class="bg-[#f8fafc] min-h-screen pb-20">
+    <div class="max-w-5xl mx-auto px-4 pt-10">
+        <header class="flex justify-between items-end mb-12">
+            <div>
+                <h1 class="text-5xl font-[800] text-slate-900 tracking-tighter mb-2">
+                    <span class="text-emerald-500">🥗</span> SCAN Eat
+                </h1>
+                <p class="text-slate-400 font-medium">AI가 분석하는 스마트한 식단 관리</p>
+            </div>
+            <div class="glass p-6 rounded-[2rem] text-right shadow-sm">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Daily Calories</p>
+                <p class="text-3xl font-[800] text-slate-800"><span id="totalKcal" class="text-emerald-500">0</span> <span class="text-lg text-slate-400">kcal</span></p>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="glass p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50">
+                    <h2 class="text-xl font-[800] mb-6 text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-camera-retro text-emerald-500"></i> 식단 업로드
+                    </h2>
+                    <div class="group relative w-full h-48 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center transition-all hover:border-emerald-400 hover:bg-emerald-50/30 mb-6 cursor-pointer overflow-hidden">
+                        <input type="file" id="imageInput" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-300 group-hover:text-emerald-400 mb-2 transition-colors"></i>
+                        <p id="fileNameDisplay" class="text-sm font-bold text-slate-400 group-hover:text-emerald-500 text-center px-4">사진을 선택하거나 드래그하세요</p>
+                    </div>
+                    <button onclick="analyzeMeal()" id="btnText" class="w-full bg-slate-900 text-white font-bold py-5 rounded-[1.5rem] hover:bg-emerald-600 transition-all shadow-lg shadow-slate-200 active:scale-95">
+                        분석 시작하기
+                    </button>
+                    <p id="loadingStatus" class="hidden mt-6 text-center text-emerald-600 font-bold animate-pulse flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-microchip animate-spin"></i> AI 영양소 계산 중...
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="glass p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 h-full">
+                    <h2 class="text-xl font-[800] mb-8 text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-emerald-500"></i> 영양 밸런스 <span class="text-sm font-normal text-slate-400">(최근 식단)</span>
+                    </h2>
+                    <div id="nutrientStats" class="space-y-8">
+                        <div class="text-center py-12 text-slate-300 font-bold italic">데이터 분석 시 그래프가 나타납니다.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section>
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-3xl font-[800] text-slate-800 tracking-tight">🗓️ 나의 식단 일기</h2>
+                <span class="bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-tighter">Diet History</span>
+            </div>
+            <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 gap-10"></div>
+        </section>
+    </div>
+
+    <script>
+        // 📍 Ngrok 주소 설정 (본인의 최신 Ngrok 주소로 변경하세요)
+        const API_URL = "https://hieroglyphically-glandless-fransisca.ngrok-free.dev";
+        
+        // 📍 Ngrok 무료 경고창을 건너뛰기 위한 헤더 설정
+        const NGROK_HEADERS = {
+            "ngrok-skip-browser-warning": "69420"
+        };
+
+        // 파일 선택 시 이름 표시
+        document.getElementById('imageInput').addEventListener('change', (e) => {
+            const fileName = e.target.files[0]?.name || "사진을 선택하거나 드래그하세요";
+            document.getElementById('fileNameDisplay').innerText = fileName;
+        });
+
+        // 1. 데이터 로드 (GET /history)
+        async function loadHistory() {
+            try {
+                const res = await fetch(`${API_URL}/history`, { headers: NGROK_HEADERS });
+                const meals = await res.json();
+                renderHistory(meals);
+                if (meals.length > 0) renderNutrientStats(meals[0]);
+            } catch (err) { 
+                console.error("데이터 로드 실패:", err); 
+            }
+        }
+
+        // 2. 상단 영양 그래프 렌더링
+        function renderNutrientStats(meal) {
+            const statsContainer = document.getElementById('nutrientStats');
+            const nutrients = [
+                { label: "탄수화물", value: meal.total_carbs, color: "from-blue-400 to-cyan-400", max: 300 },
+                { label: "단백질", value: meal.total_protein, color: "from-rose-400 to-orange-400", max: 150 },
+                { label: "지방", value: meal.total_fat, color: "from-amber-400 to-yellow-400", max: 100 }
+            ];
+
+            statsContainer.innerHTML = nutrients.map(n => {
+                const percentage = Math.min((n.value / n.max) * 100, 100);
+                return `
+                    <div>
+                        <div class="flex justify-between items-end mb-2 font-bold text-sm">
+                            <span class="text-slate-600">${n.label}</span>
+                            <span class="text-slate-400">${n.value}g / ${n.max}g</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner">
+                            <div class="bg-gradient-to-r ${n.color} h-full rounded-full progress-bar" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 3. 식단 카드 리스트 렌더링 (전/후 비교 포함)
+        function renderHistory(meals) {
+            const list = document.getElementById('historyList');
+            let totalKcal = 0;
+            list.innerHTML = "";
+
+            meals.forEach((meal) => {
+                totalKcal += meal.total_calories;
+                
+                // 📍 백엔드에서 보낸 동적 URL을 우선 사용, 없을 경우 로컬 경로 유추
+                const finalImg = meal.image_url;
+                const rawImg = meal.raw_image_url || `${API_URL}/outputs/raw_${meal.image_path.replace('res_', '')}`;
+
+                const card = `
+                    <div class="meal-card group glass rounded-[3rem] overflow-hidden shadow-xl shadow-slate-200/60 transition-all duration-500 border-none">
+                        <div class="relative h-72 flex overflow-hidden bg-slate-100 border-b border-white/20">
+                            <div class="w-1/2 relative">
+                                <img src="${rawImg}" class="w-full h-full object-cover grayscale-[15%]" onerror="this.src='https://via.placeholder.com/300x400?text=Original'">
+                                <div class="absolute top-4 left-4 bg-black/40 backdrop-blur-md text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Original</div>
+                            </div>
+                            <div class="w-1/2 relative border-l-2 border-white/50">
+                                <img src="${finalImg}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x400?text=AI+Analysis'">
+                                <div class="absolute top-4 left-4 bg-emerald-500 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest shadow-lg">AI Result</div>
+                            </div>
+                            <button onclick="deleteMeal(${meal.meal_id})" class="absolute top-4 right-4 bg-white hover:bg-rose-500 hover:text-white text-slate-400 w-10 h-10 rounded-full flex items-center justify-center z-20 transition-all shadow-xl active:scale-90">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-8">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="font-[800] text-2xl text-slate-800 mb-1">${meal.items[0]?.food_name || '식단'}</h3>
+                                    <p class="text-slate-400 text-xs font-bold"><i class="fa-regular fa-clock mr-1"></i> ${new Date(meal.created_at).toLocaleString()}</p>
+                                </div>
+                                <div class="bg-slate-900 text-white font-[800] px-5 py-2 rounded-2xl text-sm shadow-lg">${meal.total_calories} <span class="text-[10px] text-slate-400 uppercase">kcal</span></div>
+                            </div>
+                            
+                            <div class="flex gap-3 mb-6 font-bold">
+                                <span class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-xs">탄 ${meal.total_carbs}g</span>
+                                <span class="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-xs">단 ${meal.total_protein}g</span>
+                                <span class="bg-amber-50 text-amber-600 px-4 py-2 rounded-xl text-xs">지 ${meal.total_fat}g</span>
+                            </div>
+                            
+                            <div class="bg-emerald-50/50 p-6 rounded-[2rem] text-emerald-900 text-sm leading-relaxed border border-emerald-100/50 relative overflow-hidden">
+                                <i class="fa-solid fa-quote-left absolute -top-2 -left-2 text-emerald-200 text-4xl opacity-50"></i>
+                                <p class="relative z-10 font-medium italic"><span class="font-bold">Nutrition Tip:</span> ${meal.advice}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += card;
+            });
+            document.getElementById('totalKcal').innerText = totalKcal.toLocaleString();
+        }
+
+        // 4. 분석 요청 (POST /analyze)
+        async function analyzeMeal() {
+            const fileInput = document.getElementById('imageInput');
+            if (!fileInput.files[0]) return alert("분석할 사진을 선택해 주세요! 😊");
+
+            const loading = document.getElementById('loadingStatus');
+            const btn = document.getElementById('btnText');
+            
+            loading.classList.remove('hidden');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await fetch(`${API_URL}/analyze`, { 
+                    method: 'POST', 
+                    body: formData,
+                    headers: NGROK_HEADERS // 📍 경고창 방지 헤더 추가
+                });
+                if (res.ok) {
+                    alert("분석 완료! 식단 일기를 확인해 보세요. 🎉");
+                    loadHistory();
+                } else { throw new Error("분석 실패"); }
+            } catch (err) {
+                alert("서버 연결에 실패했습니다. Ngrok 상태를 확인해 주세요.");
+            } finally {
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        }
+
+        // 5. 식단 삭제 (DELETE /meal/{id})
+        async function deleteMeal(mealId) {
+            if (!confirm("이 식단 기록을 삭제하시겠습니까?")) return;
+            try {
+                const res = await fetch(`${API_URL}/meal/${mealId}`, { 
+                    method: 'DELETE',
+                    headers: NGROK_HEADERS 
+                });
+                if (res.ok) loadHistory();
+            } catch (err) { alert("삭제 처리 중 오류가 발생했습니다."); }
+        }
+
+        window.onload = loadHistory;
+    </script>
+</body>
+</html>
